@@ -1,0 +1,30 @@
+server:
+  port: ${SERVER_PORT:8089}
+
+spring:
+  application:
+    name: document-agent
+
+ai:
+  a2a:
+    server:
+      enabled: true
+
+document-ai:
+  gemini-api-key: ${GOOGLE_API_KEY}
+  gemini-model: ${DOCUMENT_GEMINI_MODEL:gemini-3.1-flash-lite}
+  mcp-server-url: ${DOCUMENT_MCP_SERVER_URL:http://localhost:8082}
+  employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+  hr-agent-url: ${HR_AGENT_A2A_URL:http://localhost:8088}
+  payroll-agent-url: ${PAYROLL_AGENT_A2A_URL:http://localhost:8085}
+  leave-agent-url: ${LEAVE_AGENT_A2A_URL:http://localhost:8087}
+  recruitment-agent-url: ${RECRUITMENT_AGENT_A2A_URL:http://localhost:8095}
+  performance-agent-url: ${PERFORMANCE_AGENT_A2A_URL:http://localhost:8094}
+  compliance-agent-url: ${COMPLIANCE_AGENT_A2A_URL:http://localhost:8097}
+  WORKFLOW-agent-url: ${ WORKFLOW_AGENT_A2A_URL:http://localhost:8094}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,mappings,beans

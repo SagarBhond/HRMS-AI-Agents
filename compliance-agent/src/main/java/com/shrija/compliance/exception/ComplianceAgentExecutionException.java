@@ -1,0 +1,1 @@
+package com.shrija.compliance.exception; public class ComplianceAgentExecutionException extends RuntimeException { public ComplianceAgentExecutionException(String message,Throwable cause){super(message,cause);} }

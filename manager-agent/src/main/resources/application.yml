@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: manager-agent
+
+server:
+  port: ${MANAGER_AGENT_PORT:8086}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${MANAGER_GEMINI_MODEL:gemini-3.1-flash-lite}
+
+    mcp-server-url: ${MANAGER_MCP_SERVER_URL:http://localhost:8082}
+
+    employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+    attendance-agent-url: ${ATTENDANCE_AGENT_A2A_URL:http://localhost:8084}
+    leave-agent-url: ${LEAVE_AGENT_A2A_URL:http://localhost:8087}
+    expense-agent-url: ${EXPENSE_AGENT_A2A_URL:http://localhost:8092}
+    performance-agent-url: ${PERFORMANCE_AGENT_A2A_URL:http://localhost:8094}
+
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.manager: INFO
+    com.google.adk: INFO

@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: payroll-agent
+
+server:
+  port: ${PAYROLL_AGENT_PORT:8085}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${PAYROLL_GEMINI_MODEL:gemini-3.1-flash-lite}
+    # MCP SSE base URL (same server employee + attendance use)
+    mcp-server-url: ${PAYROLL_MCP_SERVER_URL:http://localhost:8082}
+    employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+    attendance-agent-url: ${ATTENDANCE_AGENT_A2A_URL:http://localhost:8084}
+    leave-agent-url: ${LEAVE_AGENT_A2A_URL:http://localhost:8087}
+    manager-agent-url: ${MANAGER_AGENT_A2A_URL:http://localhost:8086}
+    hr-agent-url: ${HR_AGENT_A2A_URL:http://localhost:8088}
+
+# Embedded A2A server — same flag used by employee-agent and attendance-agent
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.payroll: INFO
+    com.google.adk: INFO

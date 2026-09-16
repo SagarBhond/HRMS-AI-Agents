@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: workflow-agent
+server:
+  port: ${WORKFLOW_AGENT_PORT:8098}
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${WORKFLOW_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${WORKFLOW_MCP_SERVER_URL:http://localhost:8082}
+ai:
+  a2a:
+    server:
+      enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+logging:
+  level:
+    com.shrija.workflow: INFO
+    com.google.adk: INFO

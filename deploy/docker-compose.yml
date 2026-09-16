@@ -1,0 +1,186 @@
+name: hrms
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: hrms_db
+      MYSQL_USER: ${HRMS_DATASOURCE_USERNAME:-hrms}
+      MYSQL_PASSWORD: ${HRMS_DATASOURCE_PASSWORD:-hrms}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      args: { SERVICE: auth-service, SERVICE_PORT: 8081 }
+    image: hrms/auth-service:local
+    restart: unless-stopped
+    ports: ["8081:8081"]
+    environment:
+      AUTH_SERVICE_PORT: 8081
+      HRMS_DATASOURCE_URL: jdbc:mysql://mysql:3306/hrms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      HRMS_DATASOURCE_USERNAME: ${HRMS_DATASOURCE_USERNAME:-hrms}
+      HRMS_DATASOURCE_PASSWORD: ${HRMS_DATASOURCE_PASSWORD:-hrms}
+      JWT_SECRET: ${JWT_SECRET:-MyLocalHRMSJwtSecretKey2026SecureValue123456}
+      AUTH_SEED_ADMIN_ENABLED: ${AUTH_SEED_ADMIN_ENABLED:-true}
+      AUTH_SEED_ADMIN_USERNAME: ${AUTH_SEED_ADMIN_USERNAME:-admin@gmail.com}
+      AUTH_SEED_ADMIN_PASSWORD: ${AUTH_SEED_ADMIN_PASSWORD:-password123}
+      AUTH_CORS_ALLOWED_ORIGIN: ${HRMS_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    depends_on:
+      mysql: { condition: service_healthy }
+
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      args: { SERVICE: mcp-server, SERVICE_PORT: 8082 }
+    image: hrms/mcp-server:local
+    restart: unless-stopped
+    ports: ["8082:8082"]
+    environment:
+      HRMS_DATASOURCE_URL: jdbc:mysql://mysql:3306/hrms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      HRMS_DATASOURCE_USERNAME: ${HRMS_DATASOURCE_USERNAME:-hrms}
+      HRMS_DATASOURCE_PASSWORD: ${HRMS_DATASOURCE_PASSWORD:-hrms}
+    depends_on:
+      mysql: { condition: service_healthy }
+
+  orchestrator-agent:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      args: { SERVICE: orchestrator-agent, SERVICE_PORT: 8080 }
+    image: hrms/orchestrator-agent:local
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}
+      JWT_SECRET: ${JWT_SECRET:-MyLocalHRMSJwtSecretKey2026SecureValue123456}
+      HRMS_CORS_ALLOWED_ORIGINS: ${HRMS_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      EMPLOYEE_AGENT_A2A_URL: http://employee-agent:8083
+      ATTENDANCE_AGENT_A2A_URL: http://attendance-agent:8084
+      PAYROLL_AGENT_A2A_URL: http://payroll-agent:8085
+      HR_AGENT_A2A_URL: http://hr-agent:8088
+      LEAVE_AGENT_A2A_URL: http://leave-agent:8087
+      MANAGER_AGENT_A2A_URL: http://manager-agent:8086
+      DOCUMENT_AGENT_A2A_URL: http://document-agent:8089
+      NOTIFICATION_AGENT_A2A_URL: http://notification-agent:8090
+      POLICY_AGENT_A2A_URL: http://policy-agent:8091
+      EXPENSE_AGENT_A2A_URL: http://expense-agent:8092
+      ASSET_AGENT_A2A_URL: http://asset-agent:8093
+      PERFORMANCE_AGENT_A2A_URL: http://performance-agent:8094
+      RECRUITMENT_AGENT_A2A_URL: http://recruitment-agent:8095
+      AUDIT_AGENT_A2A_URL: http://audit-agent:8096
+      COMPLIANCE_AGENT_A2A_URL: http://compliance-agent:8097
+      WORKFLOW_AGENT_A2A_URL: http://workflow-agent:8098
+    depends_on: [mcp-server]
+
+  employee-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: employee-agent, SERVICE_PORT: 8083 } }
+    image: hrms/employee-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", EMPLOYEE_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  attendance-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: attendance-agent, SERVICE_PORT: 8084 } }
+    image: hrms/attendance-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", ATTENDANCE_MCP_SERVER_URL: http://mcp-server:8082, EMPLOYEE_AGENT_A2A_URL: http://employee-agent:8083, PAYROLL_AGENT_A2A_URL: http://payroll-agent:8085, MANAGER_AGENT_A2A_URL: http://manager-agent:8086, ORCHESTRATOR_AGENT_A2A_URL: http://orchestrator-agent:8080 }
+    depends_on: [mcp-server]
+  payroll-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: payroll-agent, SERVICE_PORT: 8085 } }
+    image: hrms/payroll-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", PAYROLL_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  manager-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: manager-agent, SERVICE_PORT: 8086 } }
+    image: hrms/manager-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", MANAGER_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  leave-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: leave-agent, SERVICE_PORT: 8087 } }
+    image: hrms/leave-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", LEAVE_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  hr-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: hr-agent, SERVICE_PORT: 8088 } }
+    image: hrms/hr-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", HR_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  document-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: document-agent, SERVICE_PORT: 8089 } }
+    image: hrms/document-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", DOCUMENT_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  notification-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: notification-agent, SERVICE_PORT: 8090 } }
+    image: hrms/notification-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", NOTIFICATION_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  policy-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: policy-agent, SERVICE_PORT: 8091 } }
+    image: hrms/policy-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", POLICY_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  expense-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: expense-agent, SERVICE_PORT: 8092 } }
+    image: hrms/expense-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", EXPENSE_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  asset-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: asset-agent, SERVICE_PORT: 8093 } }
+    image: hrms/asset-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", ASSET_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  performance-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: performance-agent, SERVICE_PORT: 8094 } }
+    image: hrms/performance-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", PERFORMANCE_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  recruitment-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: recruitment-agent, SERVICE_PORT: 8095 } }
+    image: hrms/recruitment-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", RECRUITMENT_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  audit-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: audit-agent, SERVICE_PORT: 8096 } }
+    image: hrms/audit-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", AUDIT_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  compliance-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: compliance-agent, SERVICE_PORT: 8097 } }
+    image: hrms/compliance-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", COMPLIANCE_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+  workflow-agent:
+    build: { context: .., dockerfile: backend/Dockerfile, args: { SERVICE: workflow-agent, SERVICE_PORT: 8098 } }
+    image: hrms/workflow-agent:local
+    environment: { GOOGLE_API_KEY: "${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}", WORKFLOW_MCP_SERVER_URL: http://mcp-server:8082 }
+    depends_on: [mcp-server]
+
+  frontend:
+    build:
+      context: ../../ShrijaAI_Model_Frontend-main
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_AUTH_BASE_URL: http://localhost:8081
+        VITE_ORCHESTRATOR_BASE_URL: http://localhost:8080
+    image: hrms/frontend:local
+    ports: ["3000:80"]
+    depends_on: [auth-service, orchestrator-agent]
+
+volumes:
+  mysql-data:
+
+networks:
+  default:
+    name: hrms-network

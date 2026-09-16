@@ -1,0 +1,1 @@
+package com.shrija.recruitment.exception; public class RecruitmentAgentExecutionException extends RuntimeException { public RecruitmentAgentExecutionException(String message,Throwable cause){super(message,cause);} }

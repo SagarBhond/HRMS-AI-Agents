@@ -1,0 +1,11 @@
+**/target/
+**/.idea/
+**/*.iml
+**/.git
+**/.github
+**/dev/browser/
+**/contrib/samples/
+**/tutorials/
+*.md
+.env
+.env.*

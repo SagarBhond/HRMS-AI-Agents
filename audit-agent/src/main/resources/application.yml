@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: audit-agent
+
+server:
+  port: ${AUDIT_AGENT_PORT:8096}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${AUDIT_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${AUDIT_MCP_SERVER_URL:http://localhost:8082}
+
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.audit: INFO
+    com.google.adk: INFO

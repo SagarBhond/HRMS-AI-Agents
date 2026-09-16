@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: policy-agent
+
+server:
+  port: ${POLICY_AGENT_PORT:8091}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${POLICY_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${POLICY_MCP_SERVER_URL:http://localhost:8082}
+
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.policy: INFO
+    com.google.adk: INFO

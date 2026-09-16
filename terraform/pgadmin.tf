@@ -1,0 +1,87 @@
+resource "aws_instance" "pgadmin" {
+  ami           = data.aws_ami.amazon_linux_2023.id
+  instance_type = "c7i-flex.large"
+
+  # Deploy in public subnet for simple access and no NAT
+  subnet_id              = aws_subnet.public[0].id
+  vpc_security_group_ids = [aws_security_group.pgadmin.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_mq.name
+
+  root_block_device {
+    volume_size = 8
+    volume_type = "gp3"
+    encrypted   = true
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    set -euxo pipefail
+
+    # 1. Create 2GB swap file FIRST to prevent OOM
+    if [ ! -f /swapfile ]; then
+      dd if=/dev/zero of=/swapfile bs=1M count=2048
+      chmod 600 /swapfile
+      mkswap /swapfile
+      swapon /swapfile
+      echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+    fi
+
+    # 2. Install Docker and PostgreSQL client tools
+    yum install -y docker postgresql15 git
+    systemctl enable docker && systemctl start docker
+
+    # Install Docker Compose for the shared observability stack.
+    mkdir -p /usr/local/lib/docker/cli-plugins
+    curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)" \
+      -o /usr/local/lib/docker/cli-plugins/docker-compose
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+    ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+
+    # 3. Fetch credentials from Parameter Store
+    REGION="${var.aws_region}"
+    MQ_ADMIN_PASS=$(aws ssm get-parameter --name "/order-saga/MQ_ADMIN_PASSWORD" --with-decryption --region $REGION --query "Parameter.Value" --output text)
+    PG_USER=$(aws ssm get-parameter --name "/order-saga/POSTGRES_USER" --with-decryption --region $REGION --query "Parameter.Value" --output text)
+    PG_PASS=$(aws ssm get-parameter --name "/order-saga/POSTGRES_PASSWORD" --with-decryption --region $REGION --query "Parameter.Value" --output text)
+
+    # 4. Create the 4 logical databases on the single RDS instance
+    #    order_db is already created by RDS as the default db, so we create the other 3.
+    RDS_HOST="${aws_db_instance.rds.address}"
+    export PGPASSWORD="$PG_PASS"
+
+    for DB_NAME in inventory_db payment_db notification_db; do
+      psql -h "$RDS_HOST" -U "$PG_USER" -d order_db -tc \
+        "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 \
+        || psql -h "$RDS_HOST" -U "$PG_USER" -d order_db -c "CREATE DATABASE $DB_NAME;"
+    done
+
+    unset PGPASSWORD
+
+    # 5. Run pgAdmin
+    docker run -d --name pgadmin --restart unless-stopped \
+      -e PGADMIN_DEFAULT_EMAIL=admin@ordersaga.com \
+      -e PGADMIN_DEFAULT_PASSWORD=$MQ_ADMIN_PASS \
+      -p 5050:80 \
+      dpage/pgadmin4:latest
+
+    # Run Grafana, Prometheus, Loki, and Promtail on this same host.
+    mkdir -p /home/ec2-user/app
+    if [ ! -d /home/ec2-user/app/.git ]; then
+      git clone https://github.com/SagarBhond/event-driven-microservices-with-ibm-mq-main.git /home/ec2-user/app
+    fi
+    cd /home/ec2-user/app
+    git fetch origin
+    git checkout main
+    git pull --ff-only origin main
+    sed -i "s/__ALB_DNS_NAME__/${aws_lb.main.dns_name}/g" config/prometheus.yml
+    printf 'GRAFANA_ADMIN_PASSWORD=%s\n' "$MQ_ADMIN_PASS" > .env
+    docker compose -f docker-compose.monitoring.yml up -d
+  EOF
+
+  depends_on = [aws_db_instance.rds]
+
+  lifecycle {
+    ignore_changes = [ami, user_data]
+  }
+
+  tags = { Name = "order-saga-pgadmin" }
+}

@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: hrms
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - orchestrator-agent:8080
+          - auth-service:8081
+          - mcp-server:8082
+          - employee-agent:8083
+          - attendance-agent:8084
+          - payroll-agent:8085
+          - manager-agent:8086
+          - leave-agent:8087
+          - hr-agent:8088
+          - document-agent:8089
+          - notification-agent:8090
+          - policy-agent:8091
+          - expense-agent:8092
+          - asset-agent:8093
+          - performance-agent:8094
+          - recruitment-agent:8095
+          - audit-agent:8096
+          - compliance-agent:8097
+          - workflow-agent:8098

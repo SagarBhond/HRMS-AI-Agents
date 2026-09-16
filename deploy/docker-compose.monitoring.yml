@@ -1,0 +1,44 @@
+name: hrms-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus", "--storage.tsdb.retention.time=15d"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports: ["9090:9090"]
+
+  loki:
+    image: grafana/loki:3.1.1
+    restart: unless-stopped
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ../config/loki-config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    ports: ["3100:3100"]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../grafana/dashboards:/etc/grafana/dashboards:ro
+    ports: ["3001:3000"]
+    depends_on: [prometheus, loki]
+
+volumes:
+  prometheus-data:
+  loki-data:
+  grafana-data:
+
+networks:
+  default:
+    name: hrms-network
+    external: true

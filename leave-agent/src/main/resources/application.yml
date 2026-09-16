@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: leave-agent
+
+server:
+  port: ${LEAVE_AGENT_PORT:8087}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${LEAVE_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${LEAVE_MCP_SERVER_URL:http://localhost:8082}
+    document-agent-url: ${DOCUMENT_AGENT_A2A_URL:http://localhost:8089}
+    notification-agent-url: ${NOTIFICATION_AGENT_A2A_URL:http://localhost:8090}
+
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.leave: INFO
+    com.google.adk: INFO

@@ -1,0 +1,61 @@
+services:
+  auth-service:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/auth-service:${IMAGE_TAG:-latest}
+  mcp-server:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/mcp-server:${IMAGE_TAG:-latest}
+  orchestrator-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/orchestrator-agent:${IMAGE_TAG:-latest}
+  employee-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/employee-agent:${IMAGE_TAG:-latest}
+  attendance-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/attendance-agent:${IMAGE_TAG:-latest}
+  payroll-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/payroll-agent:${IMAGE_TAG:-latest}
+  manager-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/manager-agent:${IMAGE_TAG:-latest}
+  leave-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/leave-agent:${IMAGE_TAG:-latest}
+  hr-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/hr-agent:${IMAGE_TAG:-latest}
+  document-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/document-agent:${IMAGE_TAG:-latest}
+  notification-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/notification-agent:${IMAGE_TAG:-latest}
+  policy-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/policy-agent:${IMAGE_TAG:-latest}
+  expense-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/expense-agent:${IMAGE_TAG:-latest}
+  asset-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/asset-agent:${IMAGE_TAG:-latest}
+  performance-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/performance-agent:${IMAGE_TAG:-latest}
+  recruitment-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/recruitment-agent:${IMAGE_TAG:-latest}
+  audit-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/audit-agent:${IMAGE_TAG:-latest}
+  compliance-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/compliance-agent:${IMAGE_TAG:-latest}
+  workflow-agent:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/workflow-agent:${IMAGE_TAG:-latest}
+  frontend:
+    build: null
+    image: ${ECR_REGISTRY}/hrms/frontend:${IMAGE_TAG:-latest}

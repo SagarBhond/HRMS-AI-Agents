@@ -1,0 +1,62 @@
+#spring:
+#  application:
+#    name: attendance-agent
+#
+#server:
+#  port: ${ATTENDANCE_AGENT_PORT:8084}
+#
+#shrija:
+#  ai:
+#    gemini-api-key: ${GOOGLE_API_KEY}
+#    gemini-model: ${ATTENDANCE_GEMINI_MODEL:gemini-3.1-flash-lite}
+#    mcp-server-url: ${ATTENDANCE_MCP_SERVER_URL:http://localhost:8082/mcp}
+#    employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+#    payroll-agent-url: ${PAYROLL_AGENT_A2A_URL:http://localhost:8085}
+#    manager-agent-url: ${MANAGER_AGENT_A2A_URL:http://localhost:8086}
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info
+#
+#logging:
+#  level:
+#    com.shrija.attendance: INFO
+#    com.google.adk: INFO
+
+spring:
+  application:
+    name: attendance-agent
+
+server:
+  port: ${ATTENDANCE_AGENT_PORT:8084}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${ATTENDANCE_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${ATTENDANCE_MCP_SERVER_URL:http://localhost:8082}
+    employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+    payroll-agent-url: ${PAYROLL_AGENT_A2A_URL:http://localhost:8085}
+    manager-agent-url: ${MANAGER_AGENT_A2A_URL:http://localhost:8086}
+    orchestrator-agent-url: ${ORCHESTRATOR_AGENT_A2A_URL:http://localhost:8080}
+
+# Enables the embedded A2A server so attendance-agent is itself discoverable/callable over A2A,
+# the same flag employee-agent already sets.
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.attendance: INFO
+    com.google.adk: INFO
+
