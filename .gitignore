@@ -18,6 +18,8 @@ crash.*.log
 !.env.example
 *.tfvars
 *.tfvars.*
+!deploy/terraform/terraform.tfvars.example
+!terraform.tfvars.example
 
 # IDE
 .vscode/

@@ -1,0 +1,3 @@
+db_password = "CHANGE_ME_8_PLUS_CHARS"
+google_api_key = "CHANGE_ME_GOOGLE_API_KEY"
+jwt_secret = "CHANGE_ME_JWT_SECRET"
