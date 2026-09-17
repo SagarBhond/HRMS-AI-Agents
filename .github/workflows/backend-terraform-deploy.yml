@@ -25,6 +25,20 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          test -n "${{ secrets.DB_PASSWORD }}" || { echo "DB_PASSWORD is missing"; exit 1; }
+          test -n "${{ secrets.GOOGLE_API_KEY }}" || { echo "GOOGLE_API_KEY is missing"; exit 1; }
+          test -n "${{ secrets.JWT_SECRET }}" || { echo "JWT_SECRET is missing"; exit 1; }
+
+          if [ ${#DB_PASSWORD} -lt 8 ]; then
+            echo "DB_PASSWORD must be at least 8 characters long for AWS RDS."
+            exit 1
+          fi
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
       - name: Terraform init
         run: |
           cd deploy/terraform
