@@ -1,0 +1,39 @@
+name: Backend Terraform Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-south-1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::882040517001:role/github-actions-order-saga-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        run: |
+          cd deploy/terraform
+          terraform init
+
+      - name: Terraform apply
+        run: |
+          cd deploy/terraform
+          terraform apply -auto-approve \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="google_api_key=${{ secrets.GOOGLE_API_KEY }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}"
