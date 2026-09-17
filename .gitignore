@@ -16,6 +16,8 @@ crash.*.log
 .env
 .env.*
 !.env.example
+*.tfvars
+*.tfvars.*
 
 # IDE
 .vscode/
