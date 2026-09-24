@@ -26,25 +26,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { service: mcp-server,          port: 8082 }
-          - { service: auth-service,        port: 8081 }
-          - { service: orchestrator-agent,  port: 8080 }
-          - { service: hr-agent,            port: 8088 }
-          - { service: employee-agent,      port: 8083 }
-          - { service: attendance-agent,    port: 8084 }
-          - { service: payroll-agent,       port: 8085 }
-          - { service: manager-agent,       port: 8086 }
-          - { service: leave-agent,         port: 8087 }
-          - { service: document-agent,      port: 8089 }
-          - { service: notification-agent,  port: 8090 }
-          - { service: policy-agent,        port: 8091 }
-          - { service: expense-agent,       port: 8092 }
-          - { service: asset-agent,         port: 8093 }
-          - { service: performance-agent,   port: 8094 }
-          - { service: recruitment-agent,   port: 8095 }
-          - { service: audit-agent,         port: 8096 }
-          - { service: compliance-agent,    port: 8097 }
-          - { service: workflow-agent,      port: 8098 }
+          - { service: mcp,          dockerfile: mcp-server/Dockerfile,          port: 8082 }
+          - { service: auth,         dockerfile: auth-service/Dockerfile,       port: 8081 }
+          - { service: backend,      dockerfile: Dockerfile,                   port: 8080, app_module: orchestrator-agent }
+          - { service: hr,           dockerfile: hr-agent/Dockerfile,           port: 8088 }
+          - { service: employee,     dockerfile: employee-agent/Dockerfile,     port: 8083 }
+          - { service: attendance,   dockerfile: attendance-agent/Dockerfile,   port: 8084 }
+          - { service: payroll,      dockerfile: payroll-agent/Dockerfile,      port: 8085 }
+          - { service: manager,      dockerfile: manager-agent/Dockerfile,      port: 8086 }
+          - { service: leave,        dockerfile: leave-agent/Dockerfile,        port: 8087 }
+          - { service: document,     dockerfile: document-agent/Dockerfile,     port: 8089 }
+          - { service: notification, dockerfile: notification-agent/Dockerfile, port: 8090 }
+          - { service: policy,       dockerfile: policy-agent/Dockerfile,       port: 8091 }
+          - { service: expense,      dockerfile: expense-agent/Dockerfile,      port: 8092 }
+          - { service: asset,        dockerfile: asset-agent/Dockerfile,        port: 8093 }
+          - { service: performance,  dockerfile: performance-agent/Dockerfile,  port: 8094 }
+          - { service: recruitment,  dockerfile: recruitment-agent/Dockerfile,  port: 8095 }
+          - { service: audit,        dockerfile: audit-agent/Dockerfile,        port: 8096 }
+          - { service: compliance,   dockerfile: compliance-agent/Dockerfile,   port: 8097 }
+          - { service: workflow,     dockerfile: workflow-agent/Dockerfile,     port: 8098 }
     steps:
       - uses: actions/checkout@v4
 
@@ -65,9 +65,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
           build-args: |
+            APP_MODULE=${{ matrix.app_module || matrix.service }}
             SERVICE=${{ matrix.service }}
             SERVICE_PORT=${{ matrix.port }}
           tags: |

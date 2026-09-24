@@ -198,12 +198,8 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      status_code  = "404"
-      message_body = "Not found"
-    }
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service["frontend"].arn
   }
 }
 
@@ -231,11 +227,6 @@ resource "aws_ecs_service" "service" {
     subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
-  }
-  load_balancer {
-    target_group_arn = aws_lb_target_group.service[each.key].arn
-    container_name   = each.key
-    container_port   = each.value.port
   }
   depends_on = [aws_lb_listener.http]
 }
