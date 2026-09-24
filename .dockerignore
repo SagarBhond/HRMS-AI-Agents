@@ -1,0 +1,6 @@
+.git
+**/target
+**/*.jar
+**/node_modules
+dev/browser
+**/src/test

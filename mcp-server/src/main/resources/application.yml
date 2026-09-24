@@ -1,0 +1,51 @@
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+spring:
+  application:
+    name: hrms-mcp-server
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/hrms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  ai:
+    mcp:
+      server:
+        name: hrms-mcp-server
+        version: 1.0.0
+        type: SYNC
+        # SSE transport so the Java ADK orchestrator can connect as an
+        # MCP client over HTTP (see orchestrator-agent's SseServerParameters).
+        sse-message-endpoint: /mcp/message
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+logging:
+  level:
+    com.hrms: INFO
+    org.springframework.ai.mcp: DEBUG

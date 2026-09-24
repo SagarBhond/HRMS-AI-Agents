@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: asset-agent
+
+server:
+  port: ${ASSET_AGENT_PORT:8093}
+
+shrija:
+  ai:
+    gemini-api-key: ${GOOGLE_API_KEY}
+    gemini-model: ${ASSET_GEMINI_MODEL:gemini-3.1-flash-lite}
+    mcp-server-url: ${ASSET_MCP_SERVER_URL:http://localhost:8082}
+
+ai:
+  a2a:
+    server:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.shrija.asset: INFO
+    com.google.adk: INFO

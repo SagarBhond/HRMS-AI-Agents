@@ -1,0 +1,10 @@
+aws_region   = "ap-south-1"
+project_name = "hrms"
+db_name      = "hrms_db"
+db_username  = "hrms"
+
+# Supply these through TF_VAR_db_password, TF_VAR_google_api_key, and
+# TF_VAR_jwt_secret. Do not put real values in this file.
+github_org    = "YOUR_GITHUB_ORG"
+github_repo   = "YOUR_BACKEND_REPOSITORY"
+github_branch = "main"

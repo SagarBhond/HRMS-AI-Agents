@@ -1,0 +1,306 @@
+name: hrms-backend
+
+x-java-common: &java-common
+  restart: unless-stopped
+  environment:
+    GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+  networks:
+    - hrms-network
+  depends_on:
+    mcp:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/$${SERVER_PORT}'"]
+    interval: 15s
+    timeout: 5s
+    retries: 12
+    start_period: 60s
+
+x-agent-build: &agent-build
+  context: .
+  dockerfile: agent-service.Dockerfile
+
+services:
+  mysql:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: hrms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: hrms_db
+      MYSQL_USER: hrms
+      MYSQL_PASSWORD: hrms123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3306:3306"
+    volumes:
+      - hrms_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uhrms -phrms123 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - hrms-network
+
+  mcp:
+    build:
+      context: .
+      dockerfile: mcp-server/Dockerfile
+    container_name: hrms-mcp
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/hrms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: hrms
+      SPRING_DATASOURCE_PASSWORD: hrms123
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - hrms-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8082; printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\" >&3; grep -q \" 200\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 45s
+
+  auth:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: hrms-auth
+    <<: *java-common
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      AUTH_SERVICE_PORT: 8081
+      HRMS_DATASOURCE_URL: jdbc:mysql://mysql:3306/hrms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      HRMS_DATASOURCE_USERNAME: hrms
+      HRMS_DATASOURCE_PASSWORD: hrms123
+      JWT_SECRET: ${JWT_SECRET:-MyLocalHRMSJwtSecretKey2026SecureValue123456}
+      AUTH_SEED_ADMIN_ENABLED: ${AUTH_SEED_ADMIN_ENABLED:-true}
+      AUTH_SEED_ADMIN_USERNAME: ${AUTH_SEED_ADMIN_USERNAME:-admin@gmail.com}
+      AUTH_SEED_ADMIN_PASSWORD: ${AUTH_SEED_ADMIN_PASSWORD:-password123}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081'"]
+
+  employee:
+    build:
+      context: .
+      dockerfile: employee-agent/Dockerfile
+    container_name: hrms-employee
+    <<: *java-common
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      A2A_PUBLIC_URL: http://employee:8083
+      EMPLOYEE_MCP_SERVER_URL: http://mcp:8082
+      ATTENDANCE_AGENT_A2A_URL: http://attendance:8084
+      LEAVE_AGENT_A2A_URL: http://leave:8087
+      PAYROLL_AGENT_A2A_URL: http://payroll:8085
+      MANAGER_AGENT_A2A_URL: http://manager:8086
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_MODULE: orchestrator-agent
+    container_name: hrms-backend
+    <<: *java-common
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: dev
+      EMPLOYEE_AGENT_A2A_URL: http://employee:8083
+      ATTENDANCE_AGENT_A2A_URL: http://attendance:8084
+      PAYROLL_AGENT_A2A_URL: http://payroll:8085
+      MANAGER_AGENT_A2A_URL: http://manager:8086
+      LEAVE_AGENT_A2A_URL: http://leave:8087
+      HR_AGENT_A2A_URL: http://hr:8088
+      DOCUMENT_AGENT_A2A_URL: http://document:8089
+      NOTIFICATION_AGENT_A2A_URL: http://notification:8090
+      POLICY_AGENT_A2A_URL: http://policy:8091
+      EXPENSE_AGENT_A2A_URL: http://expense:8092
+      ASSET_AGENT_A2A_URL: http://asset:8093
+      PERFORMANCE_AGENT_A2A_URL: http://performance:8094
+      RECRUITMENT_AGENT_A2A_URL: http://recruitment:8095
+      AUDIT_AGENT_A2A_URL: http://audit:8096
+      COMPLIANCE_AGENT_A2A_URL: http://compliance:8097
+      WORKFLOW_AGENT_A2A_URL: http://workflow:8098
+      FRONTEND_URL: http://localhost:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost
+    depends_on:
+      employee:
+        condition: service_healthy
+      attendance:
+        condition: service_healthy
+      payroll:
+        condition: service_healthy
+      manager:
+        condition: service_healthy
+      leave:
+        condition: service_healthy
+      hr:
+        condition: service_healthy
+      document:
+        condition: service_healthy
+      notification:
+        condition: service_healthy
+      policy:
+        condition: service_healthy
+      expense:
+        condition: service_healthy
+      asset:
+        condition: service_healthy
+      performance:
+        condition: service_healthy
+      recruitment:
+        condition: service_healthy
+      audit:
+        condition: service_healthy
+      compliance:
+        condition: service_healthy
+      workflow:
+        condition: service_healthy
+
+  attendance:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: attendance-agent}
+    container_name: hrms-attendance
+    ports: ["8084:8084"]
+    environment: {SERVER_PORT: 8084, ATTENDANCE_AGENT_PORT: 8084, ATTENDANCE_MCP_SERVER_URL: http://mcp:8082}
+  payroll:
+    <<: *java-common
+    image: eclipse-temurin:21-jre-jammy
+    container_name: hrms-payroll
+    ports: ["8085:8085"]
+    environment: {SERVER_PORT: 8085, PAYROLL_AGENT_PORT: 8085, PAYROLL_MCP_SERVER_URL: http://mcp:8082}
+    volumes:
+      - ./payroll-agent/target/payroll-agent.jar:/app/payroll-agent.jar:ro
+    working_dir: /app
+    command: ["java", "-jar", "/app/payroll-agent.jar"]
+  manager:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: manager-agent}
+    container_name: hrms-manager
+    ports: ["8086:8086"]
+    environment: {SERVER_PORT: 8086, MANAGER_AGENT_PORT: 8086, MANAGER_MCP_SERVER_URL: http://mcp:8082}
+  leave:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: leave-agent}
+    container_name: hrms-leave
+    ports: ["8087:8087"]
+    environment: {SERVER_PORT: 8087, LEAVE_AGENT_PORT: 8087, LEAVE_MCP_SERVER_URL: http://mcp:8082}
+  hr:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: hr-agent}
+    container_name: hrms-hr
+    ports: ["8088:8088"]
+    environment: {SERVER_PORT: 8088, HR_AGENT_PORT: 8088, HR_MCP_SERVER_URL: http://mcp:8082}
+  document:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: document-agent}
+    container_name: hrms-document
+    ports: ["8089:8089"]
+    environment: {SERVER_PORT: 8089, DOCUMENT_MCP_SERVER_URL: http://mcp:8082}
+  notification:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: notification-agent}
+    container_name: hrms-notification
+    ports: ["8090:8090"]
+    environment: {SERVER_PORT: 8090, NOTIFICATION_AGENT_PORT: 8090, NOTIFICATION_MCP_SERVER_URL: http://mcp:8082}
+  policy:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: policy-agent}
+    container_name: hrms-policy
+    ports: ["8091:8091"]
+    environment: {SERVER_PORT: 8091, POLICY_AGENT_PORT: 8091, POLICY_MCP_SERVER_URL: http://mcp:8082}
+  expense:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: expense-agent}
+    container_name: hrms-expense
+    ports: ["8092:8092"]
+    environment: {SERVER_PORT: 8092, EXPENSE_AGENT_PORT: 8092, EXPENSE_MCP_SERVER_URL: http://mcp:8082}
+  asset:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: asset-agent}
+    container_name: hrms-asset
+    ports: ["8093:8093"]
+    environment: {SERVER_PORT: 8093, ASSET_AGENT_PORT: 8093, ASSET_MCP_SERVER_URL: http://mcp:8082}
+  performance:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: performance-agent}
+    container_name: hrms-performance
+    ports: ["8094:8094"]
+    environment: {SERVER_PORT: 8094, PERFORMANCE_AGENT_PORT: 8094, PERFORMANCE_MCP_SERVER_URL: http://mcp:8082}
+  recruitment:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: recruitment-agent}
+    container_name: hrms-recruitment
+    ports: ["8095:8095"]
+    environment: {SERVER_PORT: 8095, RECRUITMENT_AGENT_PORT: 8095, RECRUITMENT_MCP_SERVER_URL: http://mcp:8082}
+  audit:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: audit-agent}
+    container_name: hrms-audit
+    ports: ["8096:8096"]
+    environment: {SERVER_PORT: 8096, AUDIT_AGENT_PORT: 8096, AUDIT_MCP_SERVER_URL: http://mcp:8082}
+  compliance:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: compliance-agent}
+    container_name: hrms-compliance
+    ports: ["8097:8097"]
+    environment: {SERVER_PORT: 8097, COMPLIANCE_AGENT_PORT: 8097, COMPLIANCE_MCP_SERVER_URL: http://mcp:8082}
+  workflow:
+    <<: *java-common
+    build:
+      <<: *agent-build
+      args: {APP_MODULE: workflow-agent}
+    container_name: hrms-workflow
+    ports: ["8098:8098"]
+    environment: {SERVER_PORT: 8098, WORKFLOW_AGENT_PORT: 8098, WORKFLOW_MCP_SERVER_URL: http://mcp:8082}
+
+volumes:
+  hrms_mysql_data:
+
+networks:
+  hrms-network:
+    name: hrms-network
+    driver: bridge

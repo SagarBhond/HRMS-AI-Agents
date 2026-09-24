@@ -1,0 +1,14 @@
+﻿target/
+**/target/
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.env
+.env.*
+!.env.example
+*.log
+node_modules/
+**/node_modules/
+.idea/
+.vscode/

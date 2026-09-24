@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: orchestrator-agent
+
+server:
+  port: ${ORCHESTRATOR_AGENT_PORT:8080}
+
+shrija:
+  orchestrator:
+    ai:
+      gemini-api-key: ${GOOGLE_API_KEY}
+      gemini-model: ${ORCHESTRATOR_GEMINI_MODEL:gemini-3.1-flash-lite}
+      employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+      attendance-agent-url: ${ATTENDANCE_AGENT_A2A_URL:http://localhost:8084}
+      payroll-agent-url: ${PAYROLL_AGENT_A2A_URL:http://localhost:8085}
+      hr-agent-url: ${HR_AGENT_A2A_URL:http://localhost:8088}
+      leave-agent-url: ${LEAVE_AGENT_A2A_URL:http://localhost:8087}
+      manager-agent-url: ${MANAGER_AGENT_A2A_URL:http://localhost:8086}
+
+      document-agent-url: ${DOCUMENT_AGENT_A2A_URL:http://localhost:8089}
+      notification-agent-url: ${NOTIFICATION_AGENT_A2A_URL:http://localhost:8090}
+      policy-agent-url: ${POLICY_AGENT_A2A_URL:http://localhost:8091}
+      expense-agent-url: ${EXPENSE_AGENT_A2A_URL:http://localhost:8092}
+      asset-agent-url: ${ASSET_AGENT_A2A_URL:http://localhost:8093}
+      performance-agent-url: ${PERFORMANCE_AGENT_A2A_URL:http://localhost:8094}
+      recruitment-agent-url: ${RECRUITMENT_AGENT_A2A_URL:http://localhost:8095}
+      audit-agent-url: ${AUDIT_AGENT_A2A_URL:http://localhost:8096}
+      compliance-agent-url: ${COMPLIANCE_AGENT_A2A_URL:http://localhost:8097}
+      workflow-agent-url: ${WORKFLOW_AGENT_A2A_URL:http://localhost:8098}
+
+
+    # Must be the exact same HS256 secret the Auth Service (:8081) signs its JWTs with.
+    jwt:
+      secret: ${JWT_SECRET:MyLocalHRMSJwtSecretKey2026SecureValue123456}
+      # Claim names in the Auth Service JWT: userId, username, role, and employeeId.
+      user-id-claim: ${JWT_USER_ID_CLAIM:userId}
+      username-claim: ${JWT_USERNAME_CLAIM:username}
+      role-claim: ${JWT_ROLE_CLAIM:role}
+      employee-code-claim: ${JWT_EMPLOYEE_CODE_CLAIM:employeeId}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,mappings,beans
+
+logging:
+  level:
+    com.shrija.orchestrator: INFO
+    com.google.adk: INFO

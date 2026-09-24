@@ -1,0 +1,1 @@
+package com.shrija.workflow.exception; public class WorkflowAgentExecutionException extends RuntimeException { public WorkflowAgentExecutionException(String message,Throwable cause){super(message,cause);} }
