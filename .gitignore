@@ -4,6 +4,8 @@
 **/.terraform/
 *.tfstate
 *.tfstate.*
+terraform/*.tfvars
+terraform/*.tfvars.json
 .env
 .env.*
 !.env.example
@@ -12,3 +14,5 @@ node_modules/
 **/node_modules/
 .idea/
 .vscode/
+
+terraform/tfplan*
