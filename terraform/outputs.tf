@@ -10,22 +10,6 @@ output "github_oidc_trust_target" {
   value = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_branch}"
 }
 
-output "cloudfront_distribution_id" {
-  value = var.enable_cloudfront ? aws_cloudfront_distribution.frontend[0].id : null
-}
-
-output "cloudfront_url" {
-  value = var.enable_cloudfront ? "https://${aws_cloudfront_distribution.frontend[0].domain_name}" : null
-}
-
-output "frontend_bucket" {
-  value = var.frontend_bucket
-}
-
-output "frontend_bucket_prefix" {
-  value = var.frontend_prefix
-}
-
 output "application_secret_arn" {
   value = aws_secretsmanager_secret.application.arn
 }
