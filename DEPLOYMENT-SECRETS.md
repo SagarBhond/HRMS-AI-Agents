@@ -21,7 +21,7 @@ and finally the frontend. It does not remove the existing MySQL volume.
 ## Where each secret belongs
 
 Store backend, AWS, database, and deployment secrets in the **backend
-repository** (`SagarBhond/demo_project`) under **Settings -> Secrets and
+repository** (`SagarBhond/HRMS-AI-Agents`) under **Settings -> Secrets and
 variables -> Actions**. Prefer an environment named `production` and protect
 it with required reviewers.
 
@@ -31,7 +31,6 @@ Store only frontend deployment secrets in the **frontend repository**:
 - `AWS_ACCOUNT_ID`
 - `AWS_REGION`
 - `FRONTEND_BUCKET`
-- `CLOUDFRONT_DIST_ID`
 
 Do not put `GOOGLE_API_KEY`, `JWT_SECRET`, `DB_PASSWORD`, `DB_USERNAME`, or
 `DB_NAME` in frontend secrets. A Vite frontend bundle is public to every
@@ -41,7 +40,7 @@ browser user.
 
 Create these repository or environment secrets:
 
-- `AWS_ROLE_ARN` - the ARN output by Terraform, used through GitHub OIDC
+- `AWS_ROLE_ARN` - the repository's GitHub Actions role ARN
 - `AWS_ACCOUNT_ID`
 - `AWS_REGION`
 - `GOOGLE_API_KEY`
@@ -50,7 +49,6 @@ Create these repository or environment secrets:
 - `DB_PASSWORD`
 - `DB_NAME`
 - `FRONTEND_BUCKET`
-- `CLOUDFRONT_DIST_ID`
 - `ORCHESTRATOR_PUBLIC_URL`
 
 GitHub username/password credentials are not required. GitHub Actions should
@@ -74,5 +72,17 @@ sensitive and must be supplied through `TF_VAR_...` environment variables or a
 secret-backed CI step. `db_username` is normally `hrms` and `db_name` is
 normally `hrms_db`; these are Terraform variables, not hard-coded credentials.
 Set `github_org`, `github_repo`, and `github_branch` so the OIDC trust policy
-only accepts the intended repository and branch. A manual trust-policy
-template is in `terraform/github-oidc-trust-policy.example.json`.
+only accepts the intended repository and branch. The current manually managed
+role and provider values are:
+
+- Backend role:
+  `arn:aws:iam::882040517001:role/hrms-backend-github-actions`
+- Frontend role:
+  `arn:aws:iam::882040517001:role/hrms-frontend-github-actions`
+- GitHub OIDC provider:
+  `arn:aws:iam::882040517001:oidc-provider/token.actions.githubusercontent.com`
+
+The provider ARN belongs only in the role trust relationship. It must not be
+placed in an identity or inline permissions policy. Manual trust-policy
+templates are in `terraform/github-oidc-trust-policy.example.json` and
+`terraform/github-oidc-frontend-trust-policy.example.json`.
