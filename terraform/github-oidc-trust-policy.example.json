@@ -11,8 +11,8 @@
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:<GITHUB_ORG>/<BACKEND_REPOSITORY>:ref:refs/heads/main"
+        "StringEquals": {
+          "token.actions.githubusercontent.com:sub": "repo:SagarBhond@123446256/HRMS-AI-Agents@1372958264:ref:refs/heads/main"
         }
       }
     }
