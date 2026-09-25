@@ -2,6 +2,12 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+data "aws_caller_identity" "current" {}
+
+data "aws_s3_bucket" "frontend" {
+  bucket = var.frontend_bucket
+}
+
 locals {
   services = {
     auth         = { port = 8081, health = "/actuator/health" }
@@ -141,6 +147,22 @@ resource "aws_cloudwatch_log_group" "service" {
   retention_in_days = 14
 }
 
+resource "aws_secretsmanager_secret" "application" {
+  name                    = "${var.project_name}/application"
+  description             = "HRMS database and application credentials"
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "application" {
+  secret_id = aws_secretsmanager_secret.application.id
+  secret_string = jsonencode({
+    db_username    = var.db_username
+    db_password    = var.db_password
+    google_api_key = var.google_api_key
+    jwt_secret     = var.jwt_secret
+  })
+}
+
 resource "aws_iam_role" "execution" {
   name = "${var.project_name}-ecs-execution"
   assume_role_policy = jsonencode({
@@ -152,6 +174,19 @@ resource "aws_iam_role" "execution" {
 resource "aws_iam_role_policy_attachment" "execution" {
   role       = aws_iam_role.execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_role_policy" "execution_secrets" {
+  name = "${var.project_name}-ecs-secrets"
+  role = aws_iam_role.execution.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = aws_secretsmanager_secret.application.arn
+    }]
+  })
 }
 
 resource "aws_ecs_task_definition" "service" {
@@ -170,10 +205,12 @@ resource "aws_ecs_task_definition" "service" {
     environment = each.key == "frontend" ? [] : [
       { name = "SERVER_PORT", value = tostring(each.value.port) },
       { name = "SPRING_DATASOURCE_URL", value = "jdbc:mysql://${aws_db_instance.this.address}:3306/${var.db_name}?useSSL=true" },
-      { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
-      { name = "SPRING_DATASOURCE_PASSWORD", value = var.db_password },
-      { name = "GOOGLE_API_KEY", value = var.google_api_key },
-      { name = "JWT_SECRET", value = var.jwt_secret }
+    ]
+    secrets = each.key == "frontend" ? [] : [
+      { name = "SPRING_DATASOURCE_USERNAME", valueFrom = "${aws_secretsmanager_secret.application.arn}:db_username::" },
+      { name = "SPRING_DATASOURCE_PASSWORD", valueFrom = "${aws_secretsmanager_secret.application.arn}:db_password::" },
+      { name = "GOOGLE_API_KEY", valueFrom = "${aws_secretsmanager_secret.application.arn}:google_api_key::" },
+      { name = "JWT_SECRET", valueFrom = "${aws_secretsmanager_secret.application.arn}:jwt_secret::" }
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -229,4 +266,85 @@ resource "aws_ecs_service" "service" {
     assign_public_ip = true
   }
   depends_on = [aws_lb_listener.http]
+}
+
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  count                             = var.enable_cloudfront ? 1 : 0
+  name                              = "${var.project_name}-frontend-oac"
+  description                       = "CloudFront access to the existing frontend S3 bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+resource "aws_cloudfront_distribution" "frontend" {
+  count               = var.enable_cloudfront ? 1 : 0
+  enabled             = true
+  comment             = "${var.project_name} frontend"
+  default_root_object = "index.html"
+
+  origin {
+    domain_name              = data.aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "s3-${var.frontend_bucket}"
+    origin_path              = "/${trim(var.frontend_prefix, "/")}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend[0].id
+  }
+
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = "s3-${var.frontend_bucket}"
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = true
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  custom_error_response {
+    error_code         = 403
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+
+  custom_error_response {
+    error_code         = 404
+    response_code      = 200
+    response_page_path = "/index.html"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
+
+resource "aws_s3_bucket_policy" "frontend_cloudfront" {
+  count  = var.enable_cloudfront ? 1 : 0
+  bucket = data.aws_s3_bucket.frontend.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AllowCloudFrontServicePrincipalReadOnly"
+      Effect = "Allow"
+      Principal = {
+        Service = "cloudfront.amazonaws.com"
+      }
+      Action   = "s3:GetObject"
+      Resource = "${data.aws_s3_bucket.frontend.arn}/${trim(var.frontend_prefix, "/")}/*"
+      Condition = {
+        StringEquals = {
+          "AWS:SourceArn" = aws_cloudfront_distribution.frontend[0].arn
+        }
+      }
+    }]
+  })
 }

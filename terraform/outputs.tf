@@ -3,11 +3,31 @@ output "load_balancer_url" {
 }
 
 output "github_actions_role_arn" {
-  value = aws_iam_role.github_actions.arn
+  value = var.github_actions_role_arn
 }
 
 output "github_oidc_trust_target" {
   value = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_branch}"
+}
+
+output "cloudfront_distribution_id" {
+  value = var.enable_cloudfront ? aws_cloudfront_distribution.frontend[0].id : null
+}
+
+output "cloudfront_url" {
+  value = var.enable_cloudfront ? "https://${aws_cloudfront_distribution.frontend[0].domain_name}" : null
+}
+
+output "frontend_bucket" {
+  value = var.frontend_bucket
+}
+
+output "frontend_bucket_prefix" {
+  value = var.frontend_prefix
+}
+
+output "application_secret_arn" {
+  value = aws_secretsmanager_secret.application.arn
 }
 
 output "ecr_repository_urls" {
@@ -16,21 +36,21 @@ output "ecr_repository_urls" {
 
 output "local_stack_urls" {
   value = {
-    frontend                   = "http://localhost:3000"
-    auth_backend               = "http://localhost:8095"
-    orchestrator_backend       = "http://localhost:8096"
-    employee_agent             = "http://localhost:8097"
-    manager_agent_backend      = "http://localhost:8098"
-    prometheus                 = "http://localhost:9090"
-    grafana                    = "http://localhost:3001"
-    node_exporter_metrics      = "http://localhost:9100/metrics"
-    swagger_auth               = "http://localhost:8095/swagger-ui/index.html"
-    swagger_orchestrator        = "http://localhost:8096/swagger-ui/index.html"
-    swagger_employee_agent     = "http://localhost:8097/swagger-ui/index.html"
-    swagger_manager_agent      = "http://localhost:8098/swagger-ui/index.html"
-    prometheus_targets         = "http://localhost:9090/targets"
-    grafana_ui                 = "http://localhost:3001"
-    load_balancer              = "http://${aws_lb.this.dns_name}"
+    frontend               = "http://localhost:3000"
+    auth_backend           = "http://localhost:8095"
+    orchestrator_backend   = "http://localhost:8096"
+    employee_agent         = "http://localhost:8097"
+    manager_agent_backend  = "http://localhost:8098"
+    prometheus             = "http://localhost:9090"
+    grafana                = "http://localhost:3001"
+    node_exporter_metrics  = "http://localhost:9100/metrics"
+    swagger_auth           = "http://localhost:8095/swagger-ui/index.html"
+    swagger_orchestrator   = "http://localhost:8096/swagger-ui/index.html"
+    swagger_employee_agent = "http://localhost:8097/swagger-ui/index.html"
+    swagger_manager_agent  = "http://localhost:8098/swagger-ui/index.html"
+    prometheus_targets     = "http://localhost:9090/targets"
+    grafana_ui             = "http://localhost:3001"
+    load_balancer          = "http://${aws_lb.this.dns_name}"
   }
 }
 

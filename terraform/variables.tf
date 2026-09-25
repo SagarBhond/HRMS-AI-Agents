@@ -51,6 +51,26 @@ variable "github_branch" {
   default = "main"
 }
 
+variable "github_actions_role_arn" {
+  type    = string
+  default = "arn:aws:iam::882040517001:role/hrms-backend-github-actions"
+}
+
+variable "frontend_bucket" {
+  type    = string
+  default = "sagar100001"
+}
+
+variable "frontend_prefix" {
+  type    = string
+  default = "sagar"
+}
+
+variable "enable_cloudfront" {
+  type    = bool
+  default = false
+}
+
 variable "service_images" {
   type    = map(string)
   default = {}
