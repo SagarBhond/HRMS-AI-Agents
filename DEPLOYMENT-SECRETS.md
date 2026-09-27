@@ -79,7 +79,13 @@ role and provider values are:
 
 The provider ARN belongs only in the role trust relationship. It must not be
 placed in an identity or inline permissions policy. Manual trust-policy
-template is in `terraform/github-oidc-trust-policy.example.json`.
+template is in `terraform/github-oidc-trust-policy.example.json`. It allows
+only the `main` branch of `SagarBhond/HRMS-AI-Agents`. Apply it to the existing
+backend role from the repository root with:
+
+```powershell
+aws iam update-assume-role-policy --role-name hrms-backend-github-actions --policy-document file://terraform/github-oidc-trust-policy.example.json
+```
 
 The frontend is hosted by an Amazon Linux EC2 instance (`t3.micro` by
 default) behind the existing load balancer. Configure these repository
@@ -90,6 +96,8 @@ secrets for frontend deployment:
 
 Set the repository Actions variable `FRONTEND_EC2_HOST` to the value of the
 Terraform output `frontend_instance_public_ip`.
+These settings must be added in the frontend repository under **Settings ->
+Secrets and variables -> Actions**; a Git push cannot create or populate them.
 
 The `frontend_ssh_cidr` Terraform variable defaults to `0.0.0.0/0` because
 GitHub-hosted runner addresses change. Use a fixed runner and a narrower CIDR

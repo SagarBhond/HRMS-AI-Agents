@@ -9,10 +9,8 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringEquals": {
-          "token.actions.githubusercontent.com:sub": "repo:SagarBhond@123446256/HRMS-AI-Agents@1372958264:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:SagarBhond/HRMS-AI-Agents:ref:refs/heads/main"
         }
       }
     }
