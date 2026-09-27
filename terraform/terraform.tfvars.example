@@ -8,3 +8,6 @@ db_username  = "hrms"
 github_org    = "YOUR_GITHUB_ORG"
 github_repo   = "YOUR_BACKEND_REPOSITORY"
 github_branch = "main"
+
+# GitHub-hosted runner IPs change; restrict this CIDR when using a fixed runner.
+frontend_ssh_cidr = "0.0.0.0/0"

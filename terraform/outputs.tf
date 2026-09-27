@@ -2,6 +2,14 @@ output "load_balancer_url" {
   value = "http://${aws_lb.this.dns_name}"
 }
 
+output "frontend_instance_public_ip" {
+  value = aws_instance.frontend.public_ip
+}
+
+output "frontend_url" {
+  value = "http://${aws_lb.this.dns_name}"
+}
+
 output "github_actions_role_arn" {
   value = var.github_actions_role_arn
 }

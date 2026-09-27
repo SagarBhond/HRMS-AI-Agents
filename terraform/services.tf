@@ -1,5 +1,5 @@
 resource "aws_ecs_task_definition" "service" {
-  for_each                 = local.services
+  for_each                 = local.ecs_services
   family                   = "${var.project_name}-${each.key}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -34,7 +34,7 @@ resource "aws_ecs_task_definition" "service" {
 }
 
 resource "aws_ecs_service" "service" {
-  for_each        = local.services
+  for_each        = local.ecs_services
   name            = "${var.project_name}-${each.key}"
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.service[each.key].arn

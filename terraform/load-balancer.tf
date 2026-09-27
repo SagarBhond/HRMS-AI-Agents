@@ -11,12 +11,12 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.service["frontend"].arn
+    target_group_arn = aws_lb_target_group.frontend.arn
   }
 }
 
 resource "aws_lb_target_group" "service" {
-  for_each    = local.services
+  for_each    = local.ecs_services
   name        = "${var.project_name}-${each.key}"
   port        = each.value.port
   protocol    = "HTTP"
@@ -26,4 +26,23 @@ resource "aws_lb_target_group" "service" {
     path    = each.value.health
     matcher = "200"
   }
+}
+
+resource "aws_lb_target_group" "frontend" {
+  name        = "${var.project_name}-web-frontend"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "instance"
+  vpc_id      = aws_vpc.this.id
+
+  health_check {
+    path    = "/health"
+    matcher = "200"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "frontend" {
+  target_group_arn = aws_lb_target_group.frontend.arn
+  target_id        = aws_instance.frontend.id
+  port             = 80
 }

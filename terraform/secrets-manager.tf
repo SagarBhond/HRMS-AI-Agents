@@ -2,6 +2,10 @@ resource "aws_secretsmanager_secret" "application" {
   name                    = "${var.project_name}/application"
   description             = "HRMS database and application credentials"
   recovery_window_in_days = 7
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "application" {

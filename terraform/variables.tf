@@ -65,3 +65,14 @@ variable "desired_count" {
   type    = number
   default = 1
 }
+
+variable "frontend_instance_type" {
+  type    = string
+  default = "t3.micro"
+}
+
+variable "frontend_ssh_cidr" {
+  type        = string
+  default     = "0.0.0.0/0"
+  description = "CIDR allowed to reach SSH on the frontend instance; use a fixed runner or trusted IP range when possible."
+}

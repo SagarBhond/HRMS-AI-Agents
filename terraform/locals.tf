@@ -25,4 +25,8 @@ locals {
     workflow     = { port = 8098, health = "/actuator/health" }
     frontend     = { port = 80, health = "/health" }
   }
+
+  ecs_services = {
+    for name, service in local.services : name => service if name != "frontend"
+  }
 }

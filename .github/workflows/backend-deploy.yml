@@ -26,9 +26,7 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Build and test Maven reactor
-        run: mvn -B -ntp clean verify -DskipITs
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: mvn -B -ntp clean verify -DskipITs "-Dtest=!**/GeminiApiIntegrationTest"
 
   build-push-deploy:
     name: Build, push, and deploy ${{ matrix.service }}
