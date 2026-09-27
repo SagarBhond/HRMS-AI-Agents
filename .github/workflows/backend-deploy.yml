@@ -26,7 +26,7 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Build and test Maven reactor
-        run: mvn -B -ntp clean verify -DskipITs "-Dtest=!**/GeminiApiIntegrationTest"
+        run: mvn -B -ntp clean verify -DskipITs
 
   build-push-deploy:
     name: Build, push, and deploy ${{ matrix.service }}

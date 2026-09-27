@@ -27,9 +27,13 @@ it with required reviewers.
 
 Store only frontend deployment secrets in the **frontend repository**:
 
-- `FRONTEND_EC2_HOST` - the frontend EC2 public IP or DNS name
 - `FRONTEND_EC2_SSH_KEY` - the private key matching Terraform's frontend public key
 - `FRONTEND_EC2_KNOWN_HOSTS` - the verified SSH host-key line
+
+Set the repository Actions variable `FRONTEND_EC2_HOST` to the EC2 public IP
+from Terraform output `frontend_instance_public_ip`. Alternatively, supply the
+host as the `frontend_ec2_host` input when manually running the frontend
+workflow. The host is public infrastructure metadata, not a secret.
 
 Do not put `GOOGLE_API_KEY`, `JWT_SECRET`, `DB_PASSWORD`, `DB_USERNAME`, or
 `DB_NAME` in frontend secrets. A Vite frontend bundle is public to every
@@ -42,12 +46,11 @@ The backend deployment workflow needs these repository or environment secrets:
 - `AWS_ACCOUNT_ID` - ECR registry account
 - `ORCHESTRATOR_PUBLIC_URL` - backend health-check URL
 
-The backend build/test job does not receive `GOOGLE_API_KEY`; live Gemini
-integration tests are excluded so a deployment does not consume model quota.
-The key is configured in Terraform and passed to running backend services via
-AWS Secrets Manager. Other issue-triage or release-analysis workflows may still
-use the repository secret when their events run. GitHub Actions authenticates
-to AWS with OIDC; never store a GitHub password in repository secrets.
+The backend build/test job does not receive `GOOGLE_API_KEY`, so environment-
+gated live Gemini tests are skipped during deployment. The key is configured
+in Terraform and passed to running backend services via AWS Secrets Manager.
+GitHub Actions authenticates to AWS with OIDC; never store a GitHub password
+in repository secrets.
 
 ## Local generated credentials
 
@@ -71,24 +74,22 @@ role and provider values are:
 
 - Backend role:
   `arn:aws:iam::882040517001:role/hrms-backend-github-actions`
-- Frontend role:
-  `arn:aws:iam::882040517001:role/hrms-frontend-github-actions`
 - GitHub OIDC provider:
   `arn:aws:iam::882040517001:oidc-provider/token.actions.githubusercontent.com`
 
 The provider ARN belongs only in the role trust relationship. It must not be
 placed in an identity or inline permissions policy. Manual trust-policy
-templates are in `terraform/github-oidc-trust-policy.example.json` and
-`terraform/github-oidc-frontend-trust-policy.example.json`.
+template is in `terraform/github-oidc-trust-policy.example.json`.
 
 The frontend is hosted by an Amazon Linux EC2 instance (`t3.micro` by
 default) behind the existing load balancer. Configure these repository
 secrets for frontend deployment:
 
-- `FRONTEND_EC2_HOST`: the instance public IP from Terraform output
-  `frontend_instance_public_ip`.
-- `FRONTEND_EC2_SSH_KEY`: the matching private SSH key.
+- `FRONTEND_EC2_SSH_KEY`: the private key matching the AWS EC2 key pair `pro`.
 - `FRONTEND_EC2_KNOWN_HOSTS`: the verified SSH host-key line for that instance.
+
+Set the repository Actions variable `FRONTEND_EC2_HOST` to the value of the
+Terraform output `frontend_instance_public_ip`.
 
 The `frontend_ssh_cidr` Terraform variable defaults to `0.0.0.0/0` because
 GitHub-hosted runner addresses change. Use a fixed runner and a narrower CIDR
