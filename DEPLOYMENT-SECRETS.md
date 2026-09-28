@@ -71,19 +71,22 @@ role and provider values are:
 
 The provider ARN belongs only in the role trust relationship. It must not be
 placed in an identity or inline permissions policy. The backend trust-policy
-template is in `terraform/github-oidc-trust-policy.example.json`; apply it from
-the repository root with:
+template is in `terraform/github-oidc-trust-policy.example.json`. These
+templates use GitHub's immutable owner and repository ID subject format. Apply
+the backend trust policy from the repository root with:
 
 ```powershell
 aws iam update-assume-role-policy --role-name hrms-backend-github-actions --policy-document file://terraform/github-oidc-trust-policy.example.json
 ```
 
 The frontend trust-policy template is in
-`terraform/github-oidc-frontend-trust-policy.example.json`. It permits only
-`repo:SagarBhond/borkarpranit-ShrijaAI_Model_Frontend:ref:refs/heads/main`.
+`terraform/github-oidc-frontend-trust-policy.example.json`; it matches the
+frontend role's currently working immutable repository subject.
 
-For frontend deployment, create the `hrms/frontend-deploy` secret in AWS
-Secrets Manager in `ap-south-1`. Store a JSON object with these fields:
+Terraform creates the empty `hrms/frontend-deploy` secret container in
+`ap-south-1`. After `terraform apply`, add a JSON value to it in the AWS
+Secrets Manager console, or use the local helper below. The value must have
+these fields:
 
 ```json
 {
@@ -100,15 +103,36 @@ Encode newline characters in both multiline fields as `\n` in the JSON value;
 Secrets Manager returns them as actual newlines when the workflow parses JSON.
 Do not put these values in Terraform state, GitHub repository secrets, or Git.
 The frontend workflow uses OIDC to assume the frontend role and fetch this
-secret at deploy time. Update that role's trust policy from the repository root:
+secret at deploy time. The Terraform permission grants access only to this
+secret. The frontend OIDC trust policy is included for reference; the existing
+frontend role already uses the matching immutable subject. If you need to
+update it manually, run this from the repository root:
 
 ```powershell
 aws iam update-assume-role-policy --role-name hrms-frontend-github-actions --policy-document file://terraform/github-oidc-frontend-trust-policy.example.json
 ```
 
-Terraform grants the role `secretsmanager:GetSecretValue` only for
-`hrms/frontend-deploy`; run `terraform apply` to attach that permission after
-creating the secret. No frontend GitHub SSH secrets or host variable are needed.
+To upload the secret from Windows without putting the private key in shell
+history or Terraform state, save the rotated private key and verified
+`ssh-keyscan` output in files outside the repository, then run from the backend
+repository root:
+
+```powershell
+./terraform/scripts/set-frontend-deploy-secret.ps1 `
+  -InstanceHost (terraform -chdir=terraform output -raw frontend_instance_public_ip) `
+  -PrivateKeyPath "$HOME\.ssh\hrms-frontend-deploy" `
+  -KnownHostsPath "$HOME\.ssh\hrms-frontend-known-hosts"
+```
+
+The helper writes a temporary JSON payload with user-only file permissions,
+uploads it with the AWS CLI, and removes the temporary file. The replacement
+public key must already be authorized for `ec2-user` on the instance. Never use
+the private key previously pasted into chat; rotate the EC2 key and refresh the
+host-key file for the current instance first.
+
+Run `terraform apply` to create the secret container and attach
+`secretsmanager:GetSecretValue`. No frontend GitHub SSH secrets or host variable
+are needed.
 
 The frontend is hosted by an Amazon Linux EC2 instance (`t3.micro` by default)
 behind the existing load balancer. Get its current address with
@@ -121,10 +145,25 @@ GitHub-hosted runner addresses change. Use a fixed runner and a narrower CIDR
 where possible. Frontend assets are copied directly over SSH; no S3 bucket is
 used.
 
-Terraform looks up the existing EC2 key pair named `pro` in the configured AWS
-region; it does not create a key pair. Rotate any key previously exposed and
-authorize the replacement public key on the instance before storing its
-private key in the Secrets Manager deployment secret described above.
+Terraform looks up the EC2 key pair named by `frontend_key_pair_name` (default
+`pro`); it does not create a key pair. Rotate any key previously exposed and
+store the replacement private key in the Secrets Manager deployment secret
+described above.
+
+To rotate the exposed `pro.pem`, generate a new key pair outside the repository
+and import only its public key into EC2:
+
+```powershell
+ssh-keygen -t ed25519 -C "hrms-frontend-deploy" -f "$HOME/.ssh/hrms-frontend-rotated" -N ""
+aws ec2 import-key-pair --key-name hrms-frontend-rotated --public-key-material "fileb://$HOME/.ssh/hrms-frontend-rotated.pub" --region ap-south-1
+$env:TF_VAR_frontend_key_pair_name = "hrms-frontend-rotated"
+terraform plan
+terraform apply
+```
+
+Review the plan: changing the key-pair name replaces only the frontend EC2
+instance. After it completes, refresh the host and `ssh-keyscan` output and run
+the Secrets Manager helper with the replacement private key.
 
 If Terraform reports that `hrms/application` is scheduled for deletion, restore
 and import the existing secret before applying. With the AWS CLI configured

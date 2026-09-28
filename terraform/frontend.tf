@@ -19,7 +19,7 @@ data "aws_ami" "amazon_linux_2023" {
 }
 
 data "aws_key_pair" "frontend" {
-  key_name = "pro"
+  key_name = var.frontend_key_pair_name
 }
 
 resource "aws_instance" "frontend" {

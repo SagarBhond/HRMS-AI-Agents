@@ -57,22 +57,19 @@ resource "aws_security_group" "ecs" {
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
+  ingress {
+    from_port   = 8080
+    to_port     = 8098
+    protocol    = "tcp"
+    self        = true
+    description = "Allow backend tasks to reach each other and MCP"
+  }
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_security_group_rule" "ecs_peer_traffic" {
-  type              = "ingress"
-  from_port         = 8080
-  to_port           = 8098
-  protocol          = "tcp"
-  self              = true
-  security_group_id = aws_security_group.ecs.id
-  description       = "Allow backend tasks to reach each other and MCP"
 }
 
 resource "aws_service_discovery_private_dns_namespace" "this" {

@@ -81,6 +81,12 @@ variable "frontend_instance_type" {
   default = "t3.micro"
 }
 
+variable "frontend_key_pair_name" {
+  type        = string
+  default     = "pro"
+  description = "Existing EC2 key-pair name used for the frontend instance. Change this to rotate a compromised key."
+}
+
 variable "frontend_ssh_cidr" {
   type        = string
   default     = "0.0.0.0/0"

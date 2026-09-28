@@ -4,6 +4,11 @@ resource "aws_secretsmanager_secret" "application" {
   recovery_window_in_days = 7
 }
 
+resource "aws_secretsmanager_secret" "frontend_deploy" {
+  name        = var.frontend_deploy_secret_name
+  description = "Frontend EC2 deployment connection details; value managed directly in Secrets Manager"
+}
+
 resource "aws_secretsmanager_secret_version" "application" {
   secret_id = aws_secretsmanager_secret.application.id
   secret_string = jsonencode({

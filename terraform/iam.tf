@@ -35,7 +35,7 @@ resource "aws_iam_role_policy" "frontend_deploy_secret" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.frontend_deploy_secret_name}-*"
+      Resource = aws_secretsmanager_secret.frontend_deploy.arn
     }]
   })
 }
