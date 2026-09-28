@@ -21,7 +21,7 @@ document-ai:
   recruitment-agent-url: ${RECRUITMENT_AGENT_A2A_URL:http://localhost:8095}
   performance-agent-url: ${PERFORMANCE_AGENT_A2A_URL:http://localhost:8094}
   compliance-agent-url: ${COMPLIANCE_AGENT_A2A_URL:http://localhost:8097}
-  WORKFLOW-agent-url: ${ WORKFLOW_AGENT_A2A_URL:http://localhost:8094}
+  workflow-agent-url: ${WORKFLOW_AGENT_A2A_URL:http://localhost:8098}
 
 management:
   endpoints:

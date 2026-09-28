@@ -6,8 +6,6 @@ in the local `.env` file or in GitHub repository/environment secrets.
 ## Local Docker Compose
 
 Copy `.env.example` to `.env` and set:
-
-- `MYSQL_DATABASE`
 - `MYSQL_USER`
 - `MYSQL_PASSWORD`
 - `MYSQL_ROOT_PASSWORD`
@@ -24,16 +22,8 @@ Store backend, AWS, database, and deployment secrets in the **backend
 repository** (`SagarBhond/HRMS-AI-Agents`) under **Settings -> Secrets and
 variables -> Actions**. Prefer an environment named `production` and protect
 it with required reviewers.
-
-Store only frontend deployment secrets in the **frontend repository**:
-
-- `FRONTEND_EC2_SSH_KEY` - the private key matching Terraform's frontend public key
-- `FRONTEND_EC2_KNOWN_HOSTS` - the verified SSH host-key line
-
-Set the repository Actions variable `FRONTEND_EC2_HOST` to the EC2 public IP
-from Terraform output `frontend_instance_public_ip`. Alternatively, supply the
-host as the `frontend_ec2_host` input when manually running the frontend
-workflow. The host is public infrastructure metadata, not a secret.
+- Frontend role:
+  `arn:aws:iam::882040517001:role/hrms-frontend-github-actions`
 
 Do not put `GOOGLE_API_KEY`, `JWT_SECRET`, `DB_PASSWORD`, `DB_USERNAME`, or
 `DB_NAME` in frontend secrets. A Vite frontend bundle is public to every
@@ -74,30 +64,57 @@ role and provider values are:
 
 - Backend role:
   `arn:aws:iam::882040517001:role/hrms-backend-github-actions`
+- Frontend role:
+  `arn:aws:iam::882040517001:role/hrms-frontend-github-actions`
 - GitHub OIDC provider:
   `arn:aws:iam::882040517001:oidc-provider/token.actions.githubusercontent.com`
 
 The provider ARN belongs only in the role trust relationship. It must not be
-placed in an identity or inline permissions policy. Manual trust-policy
-template is in `terraform/github-oidc-trust-policy.example.json`. It allows
-only the `main` branch of `SagarBhond/HRMS-AI-Agents`. Apply it to the existing
-backend role from the repository root with:
+placed in an identity or inline permissions policy. The backend trust-policy
+template is in `terraform/github-oidc-trust-policy.example.json`; apply it from
+the repository root with:
 
 ```powershell
 aws iam update-assume-role-policy --role-name hrms-backend-github-actions --policy-document file://terraform/github-oidc-trust-policy.example.json
 ```
 
-The frontend is hosted by an Amazon Linux EC2 instance (`t3.micro` by
-default) behind the existing load balancer. Configure these repository
-secrets for frontend deployment:
+The frontend trust-policy template is in
+`terraform/github-oidc-frontend-trust-policy.example.json`. It permits only
+`repo:SagarBhond/borkarpranit-ShrijaAI_Model_Frontend:ref:refs/heads/main`.
 
-- `FRONTEND_EC2_SSH_KEY`: the private key matching the AWS EC2 key pair `pro`.
-- `FRONTEND_EC2_KNOWN_HOSTS`: the verified SSH host-key line for that instance.
+For frontend deployment, create the `hrms/frontend-deploy` secret in AWS
+Secrets Manager in `ap-south-1`. Store a JSON object with these fields:
 
-Set the repository Actions variable `FRONTEND_EC2_HOST` to the value of the
-Terraform output `frontend_instance_public_ip`.
-These settings must be added in the frontend repository under **Settings ->
-Secrets and variables -> Actions**; a Git push cannot create or populate them.
+```json
+{
+  "host": "current-frontend-ec2-public-dns",
+  "username": "ec2-user",
+  "private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+  "known_hosts": "verified-known-hosts-line"
+}
+```
+
+Replace the example values. The private key must be authorized on the EC2
+instance, and the known-hosts value must contain verified SSH host-key line(s).
+Encode newline characters in both multiline fields as `\n` in the JSON value;
+Secrets Manager returns them as actual newlines when the workflow parses JSON.
+Do not put these values in Terraform state, GitHub repository secrets, or Git.
+The frontend workflow uses OIDC to assume the frontend role and fetch this
+secret at deploy time. Update that role's trust policy from the repository root:
+
+```powershell
+aws iam update-assume-role-policy --role-name hrms-frontend-github-actions --policy-document file://terraform/github-oidc-frontend-trust-policy.example.json
+```
+
+Terraform grants the role `secretsmanager:GetSecretValue` only for
+`hrms/frontend-deploy`; run `terraform apply` to attach that permission after
+creating the secret. No frontend GitHub SSH secrets or host variable are needed.
+
+The frontend is hosted by an Amazon Linux EC2 instance (`t3.micro` by default)
+behind the existing load balancer. Get its current address with
+`terraform output -raw frontend_instance_public_ip` after applying Terraform.
+Update the `host` and `known_hosts` secret fields whenever that instance is
+replaced; its public address and SSH host keys can change.
 
 The `frontend_ssh_cidr` Terraform variable defaults to `0.0.0.0/0` because
 GitHub-hosted runner addresses change. Use a fixed runner and a narrower CIDR
@@ -105,9 +122,9 @@ where possible. Frontend assets are copied directly over SSH; no S3 bucket is
 used.
 
 Terraform looks up the existing EC2 key pair named `pro` in the configured AWS
-region; it does not create a key pair. The private PEM file matching that AWS
-key pair belongs only in the `FRONTEND_EC2_SSH_KEY` GitHub secret and must not
-be committed or added to Terraform variables.
+region; it does not create a key pair. Rotate any key previously exposed and
+authorize the replacement public key on the instance before storing its
+private key in the Secrets Manager deployment secret described above.
 
 If Terraform reports that `hrms/application` is scheduled for deletion, restore
 and import the existing secret before applying. With the AWS CLI configured
@@ -119,6 +136,5 @@ terraform import aws_secretsmanager_secret.application hrms/application
 terraform apply
 ```
 
-The secret resource uses `prevent_destroy` to avoid scheduling it for deletion
-again. The import records the restored secret in Terraform state; apply then
-updates its version using the currently supplied `TF_VAR_...` values.
+The import records the restored secret in Terraform state; apply then updates
+its version using the currently supplied `TF_VAR_...` values.

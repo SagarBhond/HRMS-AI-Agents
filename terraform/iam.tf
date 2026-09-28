@@ -23,3 +23,19 @@ resource "aws_iam_role_policy" "execution_secrets" {
     }]
   })
 }
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role_policy" "frontend_deploy_secret" {
+  name = "hrms-frontend-deploy-secret-read"
+  role = var.frontend_github_actions_role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.frontend_deploy_secret_name}-*"
+    }]
+  })
+}

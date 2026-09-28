@@ -11,7 +11,7 @@
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:SagarBhond@123446256/borkarpranit-ShrijaAI_Model_Frontend@1372959159:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub": "repo:SagarBhond/borkarpranit-ShrijaAI_Model_Frontend:ref:refs/heads/main"
         }
       }
     }

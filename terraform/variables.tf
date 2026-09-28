@@ -56,6 +56,16 @@ variable "github_actions_role_arn" {
   default = "arn:aws:iam::882040517001:role/hrms-backend-github-actions"
 }
 
+variable "frontend_github_actions_role_name" {
+  type    = string
+  default = "hrms-frontend-github-actions"
+}
+
+variable "frontend_deploy_secret_name" {
+  type    = string
+  default = "hrms/frontend-deploy"
+}
+
 variable "service_images" {
   type    = map(string)
   default = {}

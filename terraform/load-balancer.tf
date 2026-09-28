@@ -15,8 +15,40 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+resource "aws_lb_listener_rule" "auth_api" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service["auth"].arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/auth", "/api/auth/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "orchestrator_api" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service["backend"].arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/v1/orchestrator", "/api/v1/orchestrator/*"]
+    }
+  }
+}
+
 resource "aws_lb_target_group" "service" {
-  for_each    = local.ecs_services
+  for_each    = local.public_ecs_services
   name        = "${var.project_name}-${each.key}"
   port        = each.value.port
   protocol    = "HTTP"

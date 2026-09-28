@@ -65,6 +65,21 @@ resource "aws_security_group" "ecs" {
   }
 }
 
+resource "aws_security_group_rule" "ecs_peer_traffic" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8098
+  protocol          = "tcp"
+  self              = true
+  security_group_id = aws_security_group.ecs.id
+  description       = "Allow backend tasks to reach each other and MCP"
+}
+
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  name = "${var.project_name}.local"
+  vpc  = aws_vpc.this.id
+}
+
 resource "aws_security_group" "frontend" {
   name   = "${var.project_name}-frontend"
   vpc_id = aws_vpc.this.id

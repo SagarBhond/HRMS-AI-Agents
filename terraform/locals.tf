@@ -29,4 +29,35 @@ locals {
   ecs_services = {
     for name, service in local.services : name => service if name != "frontend"
   }
+
+  public_ecs_services = {
+    for name, service in local.ecs_services : name => service if contains(["auth", "backend"], name)
+  }
+
+  service_env_prefixes = {
+    backend      = "ORCHESTRATOR"
+    employee     = "EMPLOYEE"
+    attendance   = "ATTENDANCE"
+    payroll      = "PAYROLL"
+    manager      = "MANAGER"
+    leave        = "LEAVE"
+    hr           = "HR"
+    document     = "DOCUMENT"
+    notification = "NOTIFICATION"
+    policy       = "POLICY"
+    expense      = "EXPENSE"
+    asset        = "ASSET"
+    performance  = "PERFORMANCE"
+    recruitment  = "RECRUITMENT"
+    audit        = "AUDIT"
+    compliance   = "COMPLIANCE"
+    workflow     = "WORKFLOW"
+  }
+
+  agent_a2a_urls = {
+    for service_name, prefix in local.service_env_prefixes :
+    "${prefix}_AGENT_A2A_URL" => "http://${service_name}.${var.project_name}.local:${local.ecs_services[service_name].port}"
+  }
+
+  mcp_server_url = "http://mcp.${var.project_name}.local:${local.ecs_services["mcp"].port}"
 }

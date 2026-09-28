@@ -13,10 +13,10 @@ shrija:
     payroll-agent-url: ${PAYROLL_AGENT_A2A_URL:http://localhost:8085}
     budget-agent-url: ${BUDGET_AGENT_A2A_URL:}
     document-agent-url: ${DOCUMENT_AGENT_A2A_URL:http://localhost:8089}
-    orchestration-agent-url: ${ORCHESTRATOR_AGENT_PORT:8080}
-    recruitment-agent-url: ${RECRUITMENT_AGENT_PORT:8080}
-    employee-agent-url: ${EMPLOYEE_AGENT_PORT:8083}
-    manager-agent-url: ${MANAGER_AGENT_PORT:8086}
+    orchestration-agent-url: ${ORCHESTRATOR_AGENT_A2A_URL:http://localhost:8080}
+    recruitment-agent-url: ${RECRUITMENT_AGENT_A2A_URL:http://localhost:8095}
+    employee-agent-url: ${EMPLOYEE_AGENT_A2A_URL:http://localhost:8083}
+    manager-agent-url: ${MANAGER_AGENT_A2A_URL:http://localhost:8086}
 
 # Enables the embedded A2A server so hr-agent is itself discoverable/callable over A2A.
 ai:
