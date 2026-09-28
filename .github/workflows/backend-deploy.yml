@@ -39,22 +39,22 @@ jobs:
           - { service: mcp, dockerfile: mcp-server/Dockerfile }
           - { service: auth, dockerfile: auth-service/Dockerfile }
           - { service: backend, dockerfile: Dockerfile, app_module: orchestrator-agent }
-          - { service: hr, dockerfile: Dockerfile, app_module: hr-agent }
-          - { service: employee, dockerfile: Dockerfile, app_module: employee-agent }
-          - { service: attendance, dockerfile: Dockerfile, app_module: attendance-agent }
-          - { service: payroll, dockerfile: Dockerfile, app_module: payroll-agent }
-          - { service: manager, dockerfile: Dockerfile, app_module: manager-agent }
-          - { service: leave, dockerfile: Dockerfile, app_module: leave-agent }
-          - { service: document, dockerfile: Dockerfile, app_module: document-agent }
-          - { service: notification, dockerfile: Dockerfile, app_module: notification-agent }
-          - { service: policy, dockerfile: Dockerfile, app_module: policy-agent }
-          - { service: expense, dockerfile: Dockerfile, app_module: expense-agent }
-          - { service: asset, dockerfile: Dockerfile, app_module: asset-agent }
-          - { service: performance, dockerfile: Dockerfile, app_module: performance-agent }
-          - { service: recruitment, dockerfile: Dockerfile, app_module: recruitment-agent }
-          - { service: audit, dockerfile: Dockerfile, app_module: audit-agent }
-          - { service: compliance, dockerfile: Dockerfile, app_module: compliance-agent }
-          - { service: workflow, dockerfile: Dockerfile, app_module: workflow-agent }
+          - { service: hr, dockerfile: hr-agent/Dockerfile }
+          - { service: employee, dockerfile: employee-agent/Dockerfile }
+          - { service: attendance, dockerfile: attendance-agent/Dockerfile }
+          - { service: payroll, dockerfile: payroll-agent/Dockerfile }
+          - { service: manager, dockerfile: manager-agent/Dockerfile }
+          - { service: leave, dockerfile: leave-agent/Dockerfile }
+          - { service: document, dockerfile: document-agent/Dockerfile }
+          - { service: notification, dockerfile: notification-agent/Dockerfile }
+          - { service: policy, dockerfile: policy-agent/Dockerfile }
+          - { service: expense, dockerfile: expense-agent/Dockerfile }
+          - { service: asset, dockerfile: asset-agent/Dockerfile }
+          - { service: performance, dockerfile: performance-agent/Dockerfile }
+          - { service: recruitment, dockerfile: recruitment-agent/Dockerfile }
+          - { service: audit, dockerfile: audit-agent/Dockerfile }
+          - { service: compliance, dockerfile: compliance-agent/Dockerfile }
+          - { service: workflow, dockerfile: workflow-agent/Dockerfile }
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
